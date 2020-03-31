@@ -1,17 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 
 namespace PetSimulatorDemo.StateMachineBase
 {
     public delegate void CallBack();
 
-    public delegate void MessageHandle(IMessage message);
-    public class Machine
+    public delegate void MessageHandler(Message message);
+
+    public delegate bool MessageFilter(Message message);
+    public abstract class Machine
     {
         public IState State { get; set; }
         public HashSet<Machine> Components { get; set; }
-        public Dictionary<IState, List<CallBack>> AutoCallHandles { get; set; }
+        public Dictionary<IState, List<CallBack>> AutoCallHandlers { get; set; }
         public IIo StandardIn { get; set; }
         public IIo StandardOut { get; set; }
         public uint Time { get; set; }
@@ -21,10 +24,18 @@ namespace PetSimulatorDemo.StateMachineBase
         {
             State = state;
             Components = new HashSet<Machine>();
+            AutoCallHandlers = new Dictionary<IState, List<CallBack>>();
             StandardIn = standardIn;
             StandardOut = standardOut;
+            Time = World.Time;
         }
 
+        public void Install(Machine module)
+        {
+            Components.Add(module);
+        }
+
+        public abstract void Execute();
         public void Run()
         {
             foreach (var module in Components.Where(m => m.Time <= Time))
@@ -32,12 +43,17 @@ namespace PetSimulatorDemo.StateMachineBase
                 module.Run();
             }
 
-            foreach (var handle in AutoCallHandles[State])
+            foreach (var handler in AutoCallHandlers[State])
             {
-                handle();
+                handler();
             }
-
+            Execute();
             Time++;
+        }
+        
+        private void Listen(Type messageType, CallBack callBack)
+        {
+            StandardIn.Filter(m => m.GetType() == messageType);
         }
     }
 
@@ -48,12 +64,13 @@ namespace PetSimulatorDemo.StateMachineBase
 
     public interface IIo
     {
-        public void Push(IMessage message);
-        public void Subscribe(MessageHandle onNext);
+        public void Push(Message message);
+        public void Subscribe(MessageHandler onNext);
+        public void Filter(MessageFilter filter);
     }
 
-    public interface IMessage
+    public abstract class Message
     {
-        public string MessageType { get; set; }
+        public uint Code { get; set; }
     }
 }
