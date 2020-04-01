@@ -9,8 +9,4 @@
       <PackageReference Include="System.Reactive" Version="4.3.2" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Module" />
-    </ItemGroup>
-
 </Project>

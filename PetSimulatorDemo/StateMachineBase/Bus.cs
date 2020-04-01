@@ -26,9 +26,9 @@ namespace PetSimulatorDemo.StateMachineBase
             Subject.SubscribeOn(Scheduler).Subscribe(m=> onNext(m));
         }
 
-        public void Filter(MessageFilter filter)
+        public IObservable<Message> Filter(MessageFilter filter)
         {
-            Subject.SubscribeOn(Scheduler).Where(m => filter(m));
+            return Subject.SubscribeOn(Scheduler).Where(m => filter(m));
         }
     }
 }
